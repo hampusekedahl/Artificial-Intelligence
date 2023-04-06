@@ -79,7 +79,7 @@ void printGrid(int grid[N][N])
 
 
 int main(int argc, const char* argv[]) {
-    vector<int [N][N]> puzzles(10);
+    int puzzles[10][N][N];
 
     ifstream inputFile("sudoku_data.txt");
 
@@ -105,17 +105,17 @@ int main(int argc, const char* argv[]) {
 
     inputFile.close();
 
-
-    for(int [N][N] arr : puzzles){
-        if (Solution(arr) == true){
-            //printGrid(arr);
-            cout << "Solution found";
+    for(int i = 0; i < 10; ++i){
+        if (Solution(puzzles[i]) == true){
+            cout << "Solution found\n";
+            printGrid(puzzles[i]);
         } else {
             cout << "No solution exists";
         }
         
     }
-    
+
+    cout << endl;
 
     return 0;
 }
