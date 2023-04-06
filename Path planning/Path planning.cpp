@@ -30,6 +30,10 @@ public:
     }
 };
 
+bool operator<(const Node& left, const Node& right) {
+    return left.cost > right.cost;
+}
+
 class GreedyBestFirstSearch {
 public:
     GreedyBestFirstSearch() {}
