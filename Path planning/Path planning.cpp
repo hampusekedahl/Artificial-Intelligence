@@ -65,9 +65,18 @@ public:
                 }
             }
         }
+        return Node();
     }
 
 };
+
+void printListReverse(Node* node){
+    if(node == nullptr){
+        return;
+    }
+    printListReverse(node->parentNode);
+    cout << "City = " << node->cityName << '\n';
+}
 
 int main() {
     unordered_map<string, CityData> umap;
@@ -98,13 +107,8 @@ int main() {
 
     GreedyBestFirstSearch GBFS = GreedyBestFirstSearch();
     Node soultion = GBFS.FindSolution(umap);
-
-    cout << soultion.cityName << "\n";
-    Node temp = *soultion.parentNode;
-    while (temp.parentNode != NULL) {
-        cout << temp.cityName << "\n";
-        temp = *temp.parentNode;
-    }
+    cout << "\n\nStart to goal\n";
+    printListReverse(&soultion);
 
     return 0;
 }
