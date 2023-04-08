@@ -10,7 +10,6 @@ using namespace std;
 
 auto seed = std::chrono::system_clock::now().time_since_epoch().count();
 mt19937 g(seed);
-uniform_int_distribution<> dis(1, 249);
 
 int GlobalEye = 0;
 
@@ -24,6 +23,13 @@ int charToInt(char value) {
 
 float calcCost(int x1, int x2, int y1, int y2){
     return sqrtf(powf(x2-x1, 2.0)+powf(y2-y1, 2.0));
+}
+
+int rand_num(int start, int end)
+{
+	int r = end - start;
+	int rnum = start + rand() % r;
+	return rnum;
 }
 
 string shuffleGnome(string gnome){
@@ -44,11 +50,11 @@ public:
 unordered_map<int ,CityData> cityList;
 
 int fitnessFunc (string gnome){
-    GlobalEye++;
     float totalCost = 0;
     for(int i = 0; i < gnome.length() - 1; ++i){ 
         totalCost += calcCost(cityList[charToInt(gnome[i])].x, cityList[charToInt(gnome[i+1])].x, cityList[charToInt(gnome[i])].x, cityList[charToInt(gnome[i+1])].x);
     }
+    GlobalEye++;
     return totalCost;
 }
 
@@ -89,7 +95,7 @@ vector<int> rouletteWheelSelection(vector<Individual> pool) {
 
 
 string orderBasedCrossover (string parent1, string parent2) {
-    string subString = parent1.substr(10, 20);
+    string subString = parent1.substr(10, 13);
     string returnStr = "";
     
     for(int i = 0; i < parent2.length()-1; i++){
@@ -100,6 +106,25 @@ string orderBasedCrossover (string parent1, string parent2) {
     return returnStr+=subString+='1';
 }
 
+string mutatedGene(string gnome)
+{
+	while (true) {
+		int r = rand_num(1, 52);
+		int r1 = rand_num(1, 52);
+		if (r1 != r) {
+			char temp = gnome[r];
+			gnome[r] = gnome[r1];
+			gnome[r1] = temp;
+			break;
+		}
+	}
+	return gnome;
+}
+
+bool lessthan(Individual t1,Individual t2)
+{
+	return t1.fitness < t2.fitness;
+}
 
 class GeneticAlgorithm {
 public:
@@ -116,61 +141,58 @@ public:
             temp.fitness = fitnessFunc(temp.gnome);
             pool.push_back(temp);
         }
-        
-        /*
-        for(Individual x : pool){
-            cout << x.gnome << " : " << x.fitness << endl;
-        }
-        */
     }
 
     void FindSolution() {
 
         
-        //vector<int> selectionIndieces (250);
-       
-        
-        
-        int rand1;
-        
-        for(int ab = 0; ab < 1000; ab++){
-        vector<int> selectionIndieces (250);
-        vector<Individual> newPool;
-        
-        //newPool.reserve(500);
-        
-        selectionIndieces = rouletteWheelSelection(pool);
+        while (GlobalEye <= maxFitnessUses) {
+            sort(pool.begin(), pool.end(), lessthan);
+            vector<Individual> newPool;
 
+            for (int i = 0; i < pool.size(); i++) {
+                Individual p1 = pool[i];
+                while (true) {
+                    Individual new_gnome;
 
-        for (int index : selectionIndieces){
-            Individual tempi;
-            rand1 = dis(g);
-            tempi.gnome = orderBasedCrossover(pool[2].gnome, pool[1].gnome);
-            tempi.fitness = fitnessFunc(tempi.gnome);
-            newPool.push_back(tempi);
+                    //cross
+                    if(i <= 350) {
+                        while (true) {
+                            int r = rand_num(0, 500);
+                            if (i != r) {
+                                new_gnome.gnome = orderBasedCrossover(p1.gnome, pool[r].gnome);
+                                break;
+                            }
+                        }
+                        
+                        new_gnome.fitness = fitnessFunc(new_gnome.gnome);
+                        if (new_gnome.fitness <= pool[i].fitness) {
+                            newPool.push_back(new_gnome);
+                            break;
+                        }
+                    }
+                    
+                    //mutation
+                    new_gnome.gnome = mutatedGene(p1.gnome);
+
+                    new_gnome.fitness = fitnessFunc(new_gnome.gnome);
+                    if (new_gnome.fitness <= pool[i].fitness) {
+					newPool.push_back(new_gnome);
+					break;
+				    }
+                }
+            }
+            pool = newPool;
         }
 
-        
-        
-        for(int a = 0; a < selectionIndieces.size(); a++){
-            newPool.push_back(pool[selectionIndieces[a]]);
-        }
-
-        pool = newPool;
-        newPool.clear();
-        
-        }
-
-        
+        int onlyPrint = 0;
         for(Individual x : pool){
+            if (onlyPrint == 10){
+                break;
+            }
             cout << x.gnome << " : " << x.fitness << endl;
+            onlyPrint++;
         }
-
-        cout << "\nasdasdasd" << pool.size() << endl;
-
-        //cout << "\n" << pool[t[0]].gnome << "\n" << pool[t[1]].gnome << '\n';
-        //cout << orderBasedCrossover(pool[t[0]].gnome, pool[t[1]].gnome) << endl;
-        
     }
 
 };
@@ -183,7 +205,6 @@ int main() {
         float x, y;
         while (inputFile >> i >> x >> y) {
             cityList[i] = CityData(i, x, y);
-            //cout << "ID:" << i << ", X = " << x << ", Y = " << y << '\n';
         }
     } else {
         cout << "Input files could't be opened." << endl;
@@ -197,17 +218,15 @@ int main() {
         if(it.first != 1){
             gnome += intToChar(it.second.id);  
         } 
-        //cout << it.first << " : " << intToChar(it.second.id) << '\n';
     }
 
     gnome += intToChar(cityList[1].id);
 
-    Individual test = Individual(gnome);
-    test.fitness = fitnessFunc(test.gnome);
+    Individual start = Individual(gnome);
+    start.fitness = fitnessFunc(start.gnome);
 
-    GeneticAlgorithm GA = GeneticAlgorithm(250000, 500, test.gnome);
+    GeneticAlgorithm GA = GeneticAlgorithm(250000, 500, start.gnome);
     GA.FindSolution();
-
 
     return 0;
 }
